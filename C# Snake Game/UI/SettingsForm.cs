@@ -17,6 +17,7 @@ namespace CleanSnakeGame.UI
         private Button btnShowGrid;
         private Button btnFullscreen;
         private Button btnBack;
+        private Button btnEnableCollision;
         private Panel pnlSnakeColorPreview;
 
         private readonly Color[] snakeColors = { Color.Lime, Color.Red, Color.Blue, Color.Yellow, Color.Magenta, Color.Cyan };
@@ -106,6 +107,11 @@ namespace CleanSnakeGame.UI
             btnShowGrid.Click += BtnShowGrid_Click;
             yPos += spacing;
 
+            // Enable Collision (Boundary Walls)
+            CreateSettingButton(ref btnEnableCollision, "Boundary Walls", yPos, Color.FromArgb(156, 39, 176));
+            btnEnableCollision.Click += BtnEnableCollision_Click;
+            yPos += spacing;
+
             // Fullscreen
             CreateSettingButton(ref btnFullscreen, "Fullscreen", yPos, Color.FromArgb(76, 175, 80));
             btnFullscreen.Click += BtnFullscreen_Click;
@@ -185,7 +191,8 @@ namespace CleanSnakeGame.UI
             CreateStatusLabel($"Status: {(SettingsManager.Settings.ObstaclesEnabled ? "ON" : "OFF")}", "", 410);
             CreateStatusLabel($"Status: {(SettingsManager.Settings.SoundEnabled ? "ON" : "OFF")}", "", 475);
             CreateStatusLabel($"Status: {(SettingsManager.Settings.ShowGrid ? "ON" : "OFF")}", "", 540);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.Fullscreen ? "ON" : "OFF")}", "", 605);
+            CreateStatusLabel($"Status: {(SettingsManager.Settings.boundaryWalls ? "ON" : "OFF")}", "", 605);
+            CreateStatusLabel($"Status: {(SettingsManager.Settings.Fullscreen ? "ON" : "OFF")}", "", 670);
         }
 
         private string GetDifficultyDescription()
@@ -346,6 +353,12 @@ namespace CleanSnakeGame.UI
             UpdateStatusLabels();
         }
 
+        private void BtnEnableCollision_Click(object sender, EventArgs e)
+        {
+            SettingsManager.Settings.boundaryWalls = !SettingsManager.Settings.boundaryWalls;
+            SettingsManager.SaveSettings();
+            UpdateStatusLabels();
+        }
         private void BtnFullscreen_Click(object sender, EventArgs e)
         {
             SettingsManager.Settings.Fullscreen = !SettingsManager.Settings.Fullscreen;
