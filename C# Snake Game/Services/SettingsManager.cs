@@ -70,6 +70,7 @@ namespace CleanSnakeGame.Services
         public bool ShowGrid { get; set; } = true;
         public bool Fullscreen { get; set; } = false;
         public int BestScore { get; set; } = 0;
+        public bool boundaryWalls { get; set; } = true;
 
         // Helper methods
         public Color GetSnakeColor()

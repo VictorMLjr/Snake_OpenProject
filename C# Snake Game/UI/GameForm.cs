@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using CleanSnakeGame.Data;
 using CleanSnakeGame.Services;
@@ -55,7 +56,7 @@ namespace CleanSnakeGame.UI
             powerupTimers = new Dictionary<Point, DateTime>();
             obstacleTimers = new Dictionary<Point, DateTime>();
             gameTimer = new Timer();
-            
+
             SetupForm();
             CreateControls();
             InitializeGame();
@@ -70,11 +71,10 @@ namespace CleanSnakeGame.UI
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             KeyPreview = true;
-            KeyDown += GameForm_KeyDown;
-            
+
             // Apply fullscreen setting
             ApplyFullscreenSetting();
-            
+
             // Enable double buffering to prevent flickering
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
             UpdateStyles();
@@ -98,7 +98,7 @@ namespace CleanSnakeGame.UI
                 Size = new Size(1024, 768);
                 CenterToScreen();
             }
-            
+
             // Refresh the form to apply changes
             Refresh();
         }
@@ -122,12 +122,12 @@ namespace CleanSnakeGame.UI
                 BackColor = Color.FromArgb(20, 25, 35),
                 BorderStyle = BorderStyle.FixedSingle
             };
-            
+
             // Enable double buffering for game panel to eliminate glitches
             typeof(Panel).InvokeMember("DoubleBuffered",
                 BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
                 null, gamePanel, new object[] { true });
-            
+
             gamePanel.Paint += GamePanel_Paint;
             Controls.Add(gamePanel);
 
@@ -212,8 +212,8 @@ namespace CleanSnakeGame.UI
         private void InitializeGame()
         {
             random = new Random();
-            snake = new List<Point> 
-            { 
+            snake = new List<Point>
+            {
                 new Point(10, 10),  // Head
                 new Point(9, 10),   // Body segment 1
                 new Point(8, 10)    // Body segment 2
@@ -221,13 +221,13 @@ namespace CleanSnakeGame.UI
             direction = Direction.Right;
             nextDirection = Direction.Right;
             GenerateFood();
-            
+
             // Clear and generate powerups/obstacles based on settings
             powerups.Clear();
             obstacles.Clear();
             powerupTimers.Clear();
             obstacleTimers.Clear();
-            
+
             score = 0;
             level = 1;
             speed = SettingsManager.Settings.GetGameSpeed(); // Use settings for speed
@@ -241,12 +241,12 @@ namespace CleanSnakeGame.UI
                 gameTimer.Stop();
                 gameTimer.Dispose();
             }
-            
+
             gameTimer = new Timer();
             gameTimer.Interval = speed;
             gameTimer.Tick += GameTimer_Tick;
             gameTimer.Start();
-            
+
             // Ensure form has focus for key handling
             Focus();
             KeyPreview = true;
@@ -267,7 +267,9 @@ namespace CleanSnakeGame.UI
             if (!gameRunning || gamePaused || snake == null || snake.Count == 0) return;
 
             // Update direction
-            direction = nextDirection;
+            //direction = nextDirection;
+
+            if (directionQueue.Count > 0) direction = directionQueue.Dequeue();
 
             // Move snake
             Point head = snake[0];
@@ -280,20 +282,31 @@ namespace CleanSnakeGame.UI
                 _ => head
             };
 
-            // Handle wall wrapping (snake goes through walls)
-            if (newHead.X < 0)
-                newHead.X = GridWidth - 1;
-            else if (newHead.X >= GridWidth)
-                newHead.X = 0;
-            
-            if (newHead.Y < 0)
-                newHead.Y = GridHeight - 1;
-            else if (newHead.Y >= GridHeight)
-                newHead.Y = 0;
+            // Check wall collision (if not wrapping)
+            if (SettingsManager.Settings.boundaryWalls)
+            {
+                if (newHead.X < 0 || newHead.X >= GridWidth || newHead.Y < 0 || newHead.Y >= GridHeight)
+                {
+                    GameOver();
+                    return;
+                }
+            }
+            else
+            {
+                // Handle wall wrapping (snake goes through walls)
+                if (newHead.X < 0)
+                    newHead.X = GridWidth - 1;
+                else if (newHead.X >= GridWidth)
+                    newHead.X = 0;
 
+                if (newHead.Y < 0)
+                    newHead.Y = GridHeight - 1;
+                else if (newHead.Y >= GridHeight)
+                    newHead.Y = 0;
+            }
             snake.Insert(0, newHead);
 
-            // Check only self collision (not wall collision)
+            // Check self collison
             if (CheckSelfCollision())
             {
                 GameOver();
@@ -349,7 +362,7 @@ namespace CleanSnakeGame.UI
         private bool CheckSelfCollision()
         {
             if (snake == null || snake.Count <= 1) return false;
-            
+
             Point head = snake[0];
             // Check only self collision (snake hitting itself)
             return snake.Skip(1).Any(segment => segment.Equals(head));
@@ -358,7 +371,7 @@ namespace CleanSnakeGame.UI
         private void GenerateFood()
         {
             if (random == null || snake == null) return;
-            
+
             do
             {
                 food = new Point(random.Next(GridWidth), random.Next(GridHeight));
@@ -369,7 +382,7 @@ namespace CleanSnakeGame.UI
         private void GeneratePowerups()
         {
             if (random == null || snake == null) return;
-            
+
             // Generate 2-3 powerups
             int powerupCount = random.Next(2, 4);
             for (int i = 0; i < powerupCount; i++)
@@ -380,7 +393,7 @@ namespace CleanSnakeGame.UI
                     powerup = new Point(random.Next(GridWidth), random.Next(GridHeight));
                 }
                 while (snake.Contains(powerup) || powerups.Contains(powerup) || obstacles.Contains(powerup) || powerup.Equals(food));
-                
+
                 powerups.Add(powerup);
             }
         }
@@ -388,7 +401,7 @@ namespace CleanSnakeGame.UI
         private void GenerateObstacles()
         {
             if (random == null || snake == null) return;
-            
+
             // Generate 3-5 obstacles
             int obstacleCount = random.Next(3, 6);
             for (int i = 0; i < obstacleCount; i++)
@@ -399,7 +412,7 @@ namespace CleanSnakeGame.UI
                     obstacle = new Point(random.Next(GridWidth), random.Next(GridHeight));
                 }
                 while (snake.Contains(obstacle) || powerups.Contains(obstacle) || obstacles.Contains(obstacle) || obstacle.Equals(food));
-                
+
                 obstacles.Add(obstacle);
             }
         }
@@ -429,7 +442,7 @@ namespace CleanSnakeGame.UI
                         attempts++;
                     }
                     while ((snake.Contains(newPowerup) || powerups.Contains(newPowerup) || obstacles.Contains(newPowerup) || newPowerup.Equals(food)) && attempts < 50);
-                    
+
                     if (attempts < 50)
                     {
                         powerups.Add(newPowerup);
@@ -460,7 +473,7 @@ namespace CleanSnakeGame.UI
                         attempts++;
                     }
                     while ((snake.Contains(newObstacle) || powerups.Contains(newObstacle) || obstacles.Contains(newObstacle) || newObstacle.Equals(food)) && attempts < 50);
-                    
+
                     if (attempts < 50)
                     {
                         obstacles.Add(newObstacle);
@@ -482,7 +495,7 @@ namespace CleanSnakeGame.UI
         private void GamePanel_Paint(object sender, PaintEventArgs e)
         {
             var g = e.Graphics;
-            
+
             // Optimize rendering to reduce glitches
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
             g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
@@ -523,22 +536,22 @@ namespace CleanSnakeGame.UI
                     if (i == 0) // Head - Use settings color
                     {
                         var headColor = SettingsManager.Settings.GetSnakeColor();
-                        
+
                         // Draw head with rounded corners effect
                         using (var brush = new SolidBrush(headColor))
                         {
                             g.FillRectangle(brush, rect);
                         }
-                        
+
                         // Add border to head
                         using (var pen = new Pen(Color.FromArgb(
-                            Math.Max(0, headColor.R - 50), 
-                            Math.Max(0, headColor.G - 50), 
+                            Math.Max(0, headColor.R - 50),
+                            Math.Max(0, headColor.G - 50),
                             Math.Max(0, headColor.B - 50)), 2))
                         {
                             g.DrawRectangle(pen, rect);
                         }
-                        
+
                         // Draw simple eyes
                         using (var eyeBrush = new SolidBrush(Color.Black))
                         {
@@ -546,7 +559,7 @@ namespace CleanSnakeGame.UI
                             g.FillRectangle(eyeBrush, rect.X + 4, rect.Y + 4, eyeSize, eyeSize);
                             g.FillRectangle(eyeBrush, rect.X + rect.Width - 7, rect.Y + 4, eyeSize, eyeSize);
                         }
-                        
+
                         // Add small white highlight
                         using (var highlightBrush = new SolidBrush(Color.FromArgb(150, Color.White)))
                         {
@@ -561,13 +574,13 @@ namespace CleanSnakeGame.UI
                             Math.Max(0, headColor.G - 80),
                             Math.Max(0, headColor.B - 80)
                         );
-                        
+
                         // Draw body segments with clean design
                         using (var brush = new SolidBrush(bodyColor))
                         {
                             g.FillRectangle(brush, rect);
                         }
-                        
+
                         // Add subtle border
                         using (var pen = new Pen(Color.FromArgb(
                             Math.Max(0, bodyColor.R - 40),
@@ -576,7 +589,7 @@ namespace CleanSnakeGame.UI
                         {
                             g.DrawRectangle(pen, rect);
                         }
-                        
+
                         // Add small highlight for depth
                         using (var highlightBrush = new SolidBrush(Color.FromArgb(80, Color.White)))
                         {
@@ -603,14 +616,14 @@ namespace CleanSnakeGame.UI
             {
                 g.DrawEllipse(pen, foodRect);
             }
-            
+
             // Add shine effect to food (makes it look juicy)
             using (var shineBrush = new SolidBrush(Color.FromArgb(120, Color.White)))
             {
                 Rectangle shineRect = new Rectangle(foodRect.X + 3, foodRect.Y + 3, 6, 6);
                 g.FillEllipse(shineBrush, shineRect);
             }
-            
+
             // Add small highlight dot
             using (var highlightBrush = new SolidBrush(Color.FromArgb(180, Color.White)))
             {
@@ -639,7 +652,7 @@ namespace CleanSnakeGame.UI
                     {
                         g.DrawEllipse(pen, powerupRect);
                     }
-                    
+
                     // Add sparkle effect
                     using (var sparkleBrush = new SolidBrush(Color.White))
                     {
@@ -669,7 +682,7 @@ namespace CleanSnakeGame.UI
                     {
                         g.DrawRectangle(pen, obstacleRect);
                     }
-                    
+
                     // Add texture lines
                     using (var texturePen = new Pen(Color.FromArgb(160, 82, 45), 1))
                     {
@@ -680,53 +693,110 @@ namespace CleanSnakeGame.UI
             }
         }
 
-        private void GameForm_KeyDown(object sender, KeyEventArgs e)
+        //private void GameForm_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    // Handle F11 for fullscreen toggle (works anytime)
+        //    if (e.KeyCode == Keys.F11)
+        //    {
+        //        ToggleFullscreen();
+        //        return;
+        //    }
+
+        //    if (!gameRunning || gamePaused) 
+        //    {
+        //        if (e.KeyCode == Keys.Escape && gamePaused)
+        //        {
+        //            ShowPauseMenu();
+        //        }
+        //        return;
+        //    }
+
+        //    Direction newDirection = direction;
+
+        //    switch (e.KeyCode)
+        //    {
+        //        case Keys.W:
+        //        case Keys.Up:
+        //            if (direction != Direction.Down) newDirection = Direction.Up;
+        //            break;
+        //        case Keys.S:
+        //        case Keys.Down:
+        //            if (direction != Direction.Up) newDirection = Direction.Down;
+        //            break;
+        //        case Keys.A:
+        //        case Keys.Left:
+        //            if (direction != Direction.Right) newDirection = Direction.Left;
+        //            break;
+        //        case Keys.D:
+        //        case Keys.Right:
+        //            if (direction != Direction.Left) newDirection = Direction.Right;
+        //            break;
+        //        case Keys.Escape:
+        //            ShowPauseMenu();
+        //            return;
+        //    }
+
+        //    nextDirection = newDirection;
+        //}
+
+        private readonly Queue<Direction> directionQueue = new Queue<Direction>();
+        private const int MAX_BUFFER = 2;
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            // Handle F11 for fullscreen toggle (works anytime)
-            if (e.KeyCode == Keys.F11)
+            if (keyData == Keys.F11)
             {
                 ToggleFullscreen();
-                return;
+                return true;
             }
 
-            if (!gameRunning || gamePaused) 
+            if (!gameRunning || gamePaused)
             {
-                if (e.KeyCode == Keys.Escape && gamePaused)
+                if (keyData == Keys.Escape && gamePaused)
                 {
                     ShowPauseMenu();
+                    return true;
                 }
-                return;
+
+                return base.ProcessCmdKey(ref msg, keyData);
             }
 
             Direction newDirection = direction;
 
-            switch (e.KeyCode)
+            switch (keyData)
             {
                 case Keys.W:
                 case Keys.Up:
-                    if (direction != Direction.Down) newDirection = Direction.Up;
-                    break;
+                    EnqueueDirection(Direction.Up, Direction.Down);
+                    return true;
                 case Keys.S:
                 case Keys.Down:
-                    if (direction != Direction.Up) newDirection = Direction.Down;
-                    break;
+                    EnqueueDirection(Direction.Down, Direction.Up);
+                    return true;
                 case Keys.A:
                 case Keys.Left:
-                    if (direction != Direction.Right) newDirection = Direction.Left;
-                    break;
+                    EnqueueDirection(Direction.Left, Direction.Right);
+                    return true;
                 case Keys.D:
                 case Keys.Right:
-                    if (direction != Direction.Left) newDirection = Direction.Right;
-                    break;
+                    EnqueueDirection(Direction.Right, Direction.Left);
+                    return true;
                 case Keys.Space:
                     TogglePause();
-                    return;
+                    return true;
                 case Keys.Escape:
                     ShowPauseMenu();
-                    return;
+                    return true;
+                default:
+                    return base.ProcessCmdKey(ref msg, keyData);
             }
+        }
 
-            nextDirection = newDirection;
+        private void EnqueueDirection(Direction desired, Direction opposite)
+        {
+            Direction last = directionQueue.Count > 0 ? directionQueue.Last() : direction;
+
+            if (last != opposite && directionQueue.Count < MAX_BUFFER) directionQueue.Enqueue(desired);
         }
 
         private void ToggleFullscreen()
@@ -757,11 +827,11 @@ namespace CleanSnakeGame.UI
 
         private void ShowPauseMenu()
         {
-            if (!gameRunning) return;
+            if (!gameRunning || gamePaused) return;
 
             gamePaused = true;
             gameTimer.Stop();
-            
+
             // Ensure form has focus and key preview is enabled
             Focus();
             KeyPreview = true;
@@ -769,7 +839,7 @@ namespace CleanSnakeGame.UI
             // Create pause menu panel
             var pauseMenuPanel = new Panel
             {
-                Size = new Size(350, 400),
+                Size = new Size(350, 300),
                 BackColor = Color.FromArgb(40, 45, 55),
                 BorderStyle = BorderStyle.None,
                 Location = new Point((Width - 350) / 2, (Height - 400) / 2)
@@ -780,14 +850,14 @@ namespace CleanSnakeGame.UI
             {
                 var g = e.Graphics;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                
+
                 // Draw background
                 using (var brush = new SolidBrush(Color.FromArgb(40, 45, 55)))
                 {
                     var rect = new Rectangle(0, 0, pauseMenuPanel.Width, pauseMenuPanel.Height);
                     g.FillRectangle(brush, rect);
                 }
-                
+
                 // Draw border
                 using (var pen = new Pen(Color.FromArgb(70, 130, 255), 3))
                 {
@@ -829,38 +899,13 @@ namespace CleanSnakeGame.UI
                 KeyPreview = true; // Ensure key preview is enabled
             };
 
-            // Settings button
-            var settingsButton = new Button
-            {
-                Text = "SETTINGS",
-                Font = new Font("Arial", 14, FontStyle.Bold),
-                Size = new Size(250, 50),
-                Location = new Point(50, 150),
-                BackColor = Color.FromArgb(70, 130, 255),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            settingsButton.FlatAppearance.BorderSize = 0;
-            settingsButton.Click += (s, e) =>
-            {
-                Controls.Remove(pauseMenuPanel);
-                var settingsForm = new SettingsForm();
-                settingsForm.ShowDialog();
-                // Resume game after settings
-                gamePaused = false;
-                gameTimer.Start();
-                Focus(); // Restore focus to form for key handling
-                KeyPreview = true; // Ensure key preview is enabled
-            };
-
             // Main Menu button
             var mainMenuButton = new Button
             {
                 Text = "MAIN MENU",
                 Font = new Font("Arial", 14, FontStyle.Bold),
                 Size = new Size(250, 50),
-                Location = new Point(50, 220),
+                Location = new Point(50, 150),
                 BackColor = Color.FromArgb(255, 165, 0),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -879,7 +924,7 @@ namespace CleanSnakeGame.UI
                 Text = "QUIT GAME",
                 Font = new Font("Arial", 14, FontStyle.Bold),
                 Size = new Size(250, 50),
-                Location = new Point(50, 290),
+                Location = new Point(50, 220),
                 BackColor = Color.FromArgb(200, 50, 50),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -894,20 +939,16 @@ namespace CleanSnakeGame.UI
             // Add hover effects
             resumeButton.MouseEnter += (s, e) => resumeButton.BackColor = Color.FromArgb(70, 220, 70);
             resumeButton.MouseLeave += (s, e) => resumeButton.BackColor = Color.FromArgb(50, 200, 50);
-            
-            settingsButton.MouseEnter += (s, e) => settingsButton.BackColor = Color.FromArgb(90, 150, 255);
-            settingsButton.MouseLeave += (s, e) => settingsButton.BackColor = Color.FromArgb(70, 130, 255);
-            
+
             mainMenuButton.MouseEnter += (s, e) => mainMenuButton.BackColor = Color.FromArgb(255, 185, 20);
             mainMenuButton.MouseLeave += (s, e) => mainMenuButton.BackColor = Color.FromArgb(255, 165, 0);
-            
+
             quitButton.MouseEnter += (s, e) => quitButton.BackColor = Color.FromArgb(220, 70, 70);
             quitButton.MouseLeave += (s, e) => quitButton.BackColor = Color.FromArgb(200, 50, 50);
 
             // Add controls to panel
             pauseMenuPanel.Controls.Add(titleLabel);
             pauseMenuPanel.Controls.Add(resumeButton);
-            pauseMenuPanel.Controls.Add(settingsButton);
             pauseMenuPanel.Controls.Add(mainMenuButton);
             pauseMenuPanel.Controls.Add(quitButton);
 
@@ -945,14 +986,14 @@ namespace CleanSnakeGame.UI
         {
             gameRunning = false;
             gameTimer.Stop();
-            
+
             // Update best score in settings
             if (score > SettingsManager.Settings.BestScore)
             {
                 SettingsManager.Settings.BestScore = score;
                 SettingsManager.SaveSettings();
             }
-            
+
             // Record score in database (non-blocking in case of errors)
             try
             {
@@ -963,9 +1004,9 @@ namespace CleanSnakeGame.UI
                 // Log to console; avoid interrupting UX
                 Console.WriteLine($"Failed to save score: {ex.Message}");
             }
-            
+
             UpdateUI();
-            
+
             // Show custom game over dialog
             ShowGameOverDialog();
         }
@@ -986,14 +1027,14 @@ namespace CleanSnakeGame.UI
             {
                 var g = e.Graphics;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                
+
                 // Draw background with rounded corners
                 using (var brush = new SolidBrush(Color.FromArgb(40, 45, 55)))
                 {
                     var rect = new Rectangle(0, 0, gameOverPanel.Width, gameOverPanel.Height);
                     g.FillRectangle(brush, rect);
                 }
-                
+
                 // Draw border
                 using (var pen = new Pen(Color.FromArgb(70, 130, 255), 3))
                 {
