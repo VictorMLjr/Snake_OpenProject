@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using CleanSnakeGame.Data;
 using CleanSnakeGame.Services;
@@ -70,7 +71,7 @@ namespace CleanSnakeGame.UI
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             KeyPreview = true;
-            KeyDown += GameForm_KeyDown;
+            //KeyDown += ProcessCmdKey();
             
             // Apply fullscreen setting
             ApplyFullscreenSetting();
@@ -267,7 +268,9 @@ namespace CleanSnakeGame.UI
             if (!gameRunning || gamePaused || snake == null || snake.Count == 0) return;
 
             // Update direction
-            direction = nextDirection;
+            //direction = nextDirection;
+
+            if (directionQueue.Count > 0) direction = directionQueue.Dequeue();
 
             // Move snake
             Point head = snake[0];
@@ -680,53 +683,110 @@ namespace CleanSnakeGame.UI
             }
         }
 
-        private void GameForm_KeyDown(object sender, KeyEventArgs e)
+        //private void GameForm_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    // Handle F11 for fullscreen toggle (works anytime)
+        //    if (e.KeyCode == Keys.F11)
+        //    {
+        //        ToggleFullscreen();
+        //        return;
+        //    }
+
+        //    if (!gameRunning || gamePaused) 
+        //    {
+        //        if (e.KeyCode == Keys.Escape && gamePaused)
+        //        {
+        //            ShowPauseMenu();
+        //        }
+        //        return;
+        //    }
+
+        //    Direction newDirection = direction;
+
+        //    switch (e.KeyCode)
+        //    {
+        //        case Keys.W:
+        //        case Keys.Up:
+        //            if (direction != Direction.Down) newDirection = Direction.Up;
+        //            break;
+        //        case Keys.S:
+        //        case Keys.Down:
+        //            if (direction != Direction.Up) newDirection = Direction.Down;
+        //            break;
+        //        case Keys.A:
+        //        case Keys.Left:
+        //            if (direction != Direction.Right) newDirection = Direction.Left;
+        //            break;
+        //        case Keys.D:
+        //        case Keys.Right:
+        //            if (direction != Direction.Left) newDirection = Direction.Right;
+        //            break;
+        //        case Keys.Escape:
+        //            ShowPauseMenu();
+        //            return;
+        //    }
+
+        //    nextDirection = newDirection;
+        //}
+
+        private readonly Queue<Direction> directionQueue = new Queue<Direction>();
+        private const int MAX_BUFFER = 2;
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            // Handle F11 for fullscreen toggle (works anytime)
-            if (e.KeyCode == Keys.F11)
+            if (keyData == Keys.F11)
             {
                 ToggleFullscreen();
-                return;
+                return true;
             }
 
-            if (!gameRunning || gamePaused) 
+            if (!gameRunning || gamePaused)
             {
-                if (e.KeyCode == Keys.Escape && gamePaused)
+                if (keyData == Keys.Escape && gamePaused)
                 {
                     ShowPauseMenu();
+                    return true;
                 }
-                return;
+
+                return base.ProcessCmdKey(ref msg, keyData);
             }
 
             Direction newDirection = direction;
 
-            switch (e.KeyCode)
+            switch (keyData)
             {
                 case Keys.W:
                 case Keys.Up:
-                    if (direction != Direction.Down) newDirection = Direction.Up;
-                    break;
+                    EnqueueDirection(Direction.Up, Direction.Down);
+                    return true;
                 case Keys.S:
                 case Keys.Down:
-                    if (direction != Direction.Up) newDirection = Direction.Down;
-                    break;
+                    EnqueueDirection(Direction.Down, Direction.Up);
+                    return true;
                 case Keys.A:
                 case Keys.Left:
-                    if (direction != Direction.Right) newDirection = Direction.Left;
-                    break;
+                    EnqueueDirection(Direction.Left, Direction.Right);
+                    return true;
                 case Keys.D:
                 case Keys.Right:
-                    if (direction != Direction.Left) newDirection = Direction.Right;
-                    break;
+                    EnqueueDirection(Direction.Right, Direction.Left);
+                    return true;
                 case Keys.Space:
                     TogglePause();
-                    return;
+                    return true;
                 case Keys.Escape:
                     ShowPauseMenu();
-                    return;
+                    return true;
+                default:
+                    return base.ProcessCmdKey(ref msg, keyData);
             }
+        }
 
-            nextDirection = newDirection;
+        private void EnqueueDirection(Direction desired, Direction opposite)
+        {
+            Direction last = directionQueue.Count > 0 ? directionQueue.Last() : direction;
+
+            if (last != opposite && directionQueue.Count < MAX_BUFFER) directionQueue.Enqueue(desired);
         }
 
         private void ToggleFullscreen()
@@ -757,7 +817,7 @@ namespace CleanSnakeGame.UI
 
         private void ShowPauseMenu()
         {
-            if (!gameRunning) return;
+            if (!gameRunning || gamePaused) return;
 
             gamePaused = true;
             gameTimer.Stop();
@@ -769,7 +829,7 @@ namespace CleanSnakeGame.UI
             // Create pause menu panel
             var pauseMenuPanel = new Panel
             {
-                Size = new Size(350, 400),
+                Size = new Size(350, 300),
                 BackColor = Color.FromArgb(40, 45, 55),
                 BorderStyle = BorderStyle.None,
                 Location = new Point((Width - 350) / 2, (Height - 400) / 2)
@@ -829,38 +889,13 @@ namespace CleanSnakeGame.UI
                 KeyPreview = true; // Ensure key preview is enabled
             };
 
-            // Settings button
-            var settingsButton = new Button
-            {
-                Text = "SETTINGS",
-                Font = new Font("Arial", 14, FontStyle.Bold),
-                Size = new Size(250, 50),
-                Location = new Point(50, 150),
-                BackColor = Color.FromArgb(70, 130, 255),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            settingsButton.FlatAppearance.BorderSize = 0;
-            settingsButton.Click += (s, e) =>
-            {
-                Controls.Remove(pauseMenuPanel);
-                var settingsForm = new SettingsForm();
-                settingsForm.ShowDialog();
-                // Resume game after settings
-                gamePaused = false;
-                gameTimer.Start();
-                Focus(); // Restore focus to form for key handling
-                KeyPreview = true; // Ensure key preview is enabled
-            };
-
             // Main Menu button
             var mainMenuButton = new Button
             {
                 Text = "MAIN MENU",
                 Font = new Font("Arial", 14, FontStyle.Bold),
                 Size = new Size(250, 50),
-                Location = new Point(50, 220),
+                Location = new Point(50, 150),
                 BackColor = Color.FromArgb(255, 165, 0),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -879,7 +914,7 @@ namespace CleanSnakeGame.UI
                 Text = "QUIT GAME",
                 Font = new Font("Arial", 14, FontStyle.Bold),
                 Size = new Size(250, 50),
-                Location = new Point(50, 290),
+                Location = new Point(50, 220),
                 BackColor = Color.FromArgb(200, 50, 50),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -895,9 +930,6 @@ namespace CleanSnakeGame.UI
             resumeButton.MouseEnter += (s, e) => resumeButton.BackColor = Color.FromArgb(70, 220, 70);
             resumeButton.MouseLeave += (s, e) => resumeButton.BackColor = Color.FromArgb(50, 200, 50);
             
-            settingsButton.MouseEnter += (s, e) => settingsButton.BackColor = Color.FromArgb(90, 150, 255);
-            settingsButton.MouseLeave += (s, e) => settingsButton.BackColor = Color.FromArgb(70, 130, 255);
-            
             mainMenuButton.MouseEnter += (s, e) => mainMenuButton.BackColor = Color.FromArgb(255, 185, 20);
             mainMenuButton.MouseLeave += (s, e) => mainMenuButton.BackColor = Color.FromArgb(255, 165, 0);
             
@@ -907,7 +939,6 @@ namespace CleanSnakeGame.UI
             // Add controls to panel
             pauseMenuPanel.Controls.Add(titleLabel);
             pauseMenuPanel.Controls.Add(resumeButton);
-            pauseMenuPanel.Controls.Add(settingsButton);
             pauseMenuPanel.Controls.Add(mainMenuButton);
             pauseMenuPanel.Controls.Add(quitButton);
 
