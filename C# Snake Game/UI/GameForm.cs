@@ -77,16 +77,17 @@ namespace CleanSnakeGame.UI
 
             windowService = new WindowService(this);
 
-            gameDialogs = new GameDialogs(this, gameState, null);
-
             gameManager = new GameManager(
                 gameState,
                 gameEngine,
                 gameTimer,
                 gamePanel,
                 UpdateUI,
-                () => gameDialogs.ShowGameOverDialog()
+                () => gameDialogs.ShowGameOverDialog(),
+                () => gameDialogs.ShowPauseMenu()
             );
+
+            gameDialogs = new GameDialogs(this, gameState, gameManager);
 
             inputHandler = new InputHandler(gameState, gameManager, windowService);
             KeyDown += inputHandler.HandleKeyDown;
