@@ -13,6 +13,7 @@ namespace CleanSnakeGame.Input
         private readonly WindowService windowService;
 
         private const int MAX_BUFFER = 3;
+        private Keys lastKey = Keys.None;
 
         public InputHandler(GameState state, GameManager manager, WindowService windowService)
         {
@@ -42,22 +43,26 @@ namespace CleanSnakeGame.Input
             {
                 case Keys.W:
                 case Keys.Up:
-                    EnqueueDirection(Direction.Up, Direction.Down);
+                    if (lastKey != e.KeyCode) EnqueueDirection(Direction.Up, Direction.Down);
+                    lastKey = e.KeyCode;
                     break;
 
                 case Keys.S:
                 case Keys.Down:
-                    EnqueueDirection(Direction.Down, Direction.Up);
+                    if (lastKey != e.KeyCode) EnqueueDirection(Direction.Down, Direction.Up);
+                    lastKey = e.KeyCode;
                     break;
 
                 case Keys.A:
                 case Keys.Left:
-                    EnqueueDirection(Direction.Left, Direction.Right);
+                    if (lastKey != e.KeyCode) EnqueueDirection(Direction.Left, Direction.Right);
+                    lastKey = e.KeyCode;
                     break;
 
                 case Keys.D:
                 case Keys.Right:
-                    EnqueueDirection(Direction.Right, Direction.Left);
+                    if (lastKey != e.KeyCode) EnqueueDirection(Direction.Right, Direction.Left);
+                    lastKey = e.KeyCode;
                     break;
 
                 case Keys.Escape:
