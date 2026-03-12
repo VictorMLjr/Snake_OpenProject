@@ -22,9 +22,7 @@ namespace CleanSnakeGame.Services
 
         public void ShowPauseMenu()
         {
-            if (!state.GameRunning || state.GamePaused) return;
-
-            state.GamePaused = true;
+            if (!state.GameRunning) return;
 
             var panel = new Panel
             {
@@ -48,6 +46,7 @@ namespace CleanSnakeGame.Services
             {
                 form.Controls.Remove(panel);
                 manager.TogglePause();
+                form.Focus();
             };
 
             var menu = CreateButton("MAIN MENU", 150, Color.FromArgb(255, 165, 0));
