@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Windows.Forms;
 using CleanSnakeGame.Services;
 
@@ -20,6 +21,18 @@ namespace CleanSnakeGame.UI
         private Button btnEnableCollision;
         private Panel pnlSnakeColorPreview;
 
+        // Why did the original creator have buttons declared BUT NOT THE LABELS???
+        private Label difficultyLabel;
+        private Label diffDescLabel;
+        private Label colorLabel;
+        private Label nameLabel;
+        private Label powerUpsLabel;
+        private Label obstaclesLabel;
+        private Label soundLabel;
+        private Label gridLabel;
+        private Label boundaryLabel;
+        private Label fullscreenLabel;
+
         private readonly Color[] snakeColors = { Color.Lime, Color.Red, Color.Blue, Color.Yellow, Color.Magenta, Color.Cyan };
 
         public SettingsForm()
@@ -28,8 +41,6 @@ namespace CleanSnakeGame.UI
             SetupForm();
             CreateControls();
             UpdateStatusLabels();
-            
-            // Apply current fullscreen setting
             ApplyFullscreenToCurrentForm();
         }
 
@@ -39,7 +50,6 @@ namespace CleanSnakeGame.UI
             Size = new Size(1024, 800); // Increased height to prevent overlap
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(30, 35, 45);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             KeyPreview = true;
             KeyDown += SettingsForm_KeyDown;
@@ -65,12 +75,16 @@ namespace CleanSnakeGame.UI
             // Difficulty
             CreateSettingButton(ref btnDifficulty, "Difficulty", yPos, Color.FromArgb(33, 150, 243));
             btnDifficulty.Click += BtnDifficulty_Click;
+            difficultyLabel = CreateStatusLabel(yPos);
+            diffDescLabel = CreateSubtextLabel(yPos + 20);
+            diffDescLabel.UseMnemonic = false;
             yPos += spacing;
 
             // Snake Color with preview
             CreateSettingButton(ref btnSnakeColor, "Snake Color", yPos, Color.FromArgb(76, 175, 80));
             btnSnakeColor.Click += BtnSnakeColor_Click;
-            
+            colorLabel = CreateStatusLabel(yPos);
+
             pnlSnakeColorPreview = new Panel
             {
                 Size = new Size(60, 20),
@@ -85,36 +99,43 @@ namespace CleanSnakeGame.UI
             // Player Name
             CreateSettingButton(ref btnPlayerName, "Player Name", yPos, Color.FromArgb(156, 39, 176));
             btnPlayerName.Click += BtnPlayerName_Click;
+            nameLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Powerups
             CreateSettingButton(ref btnPowerups, "Powerups", yPos, Color.FromArgb(255, 152, 0));
             btnPowerups.Click += BtnPowerups_Click;
+            powerUpsLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Obstacles
             CreateSettingButton(ref btnObstacles, "Obstacles", yPos, Color.FromArgb(244, 67, 54));
             btnObstacles.Click += BtnObstacles_Click;
+            obstaclesLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Sound
             CreateSettingButton(ref btnSound, "Sound", yPos, Color.FromArgb(255, 235, 59));
             btnSound.Click += BtnSound_Click;
+            soundLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Show Grid
             CreateSettingButton(ref btnShowGrid, "Show Grid", yPos, Color.FromArgb(33, 150, 243));
             btnShowGrid.Click += BtnShowGrid_Click;
+            gridLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Enable Collision (Boundary Walls)
             CreateSettingButton(ref btnEnableCollision, "Boundary Walls", yPos, Color.FromArgb(156, 39, 176));
             btnEnableCollision.Click += BtnEnableCollision_Click;
+            boundaryLabel = CreateStatusLabel(yPos);
             yPos += spacing;
 
             // Fullscreen
             CreateSettingButton(ref btnFullscreen, "Fullscreen", yPos, Color.FromArgb(76, 175, 80));
             btnFullscreen.Click += BtnFullscreen_Click;
+            fullscreenLabel = CreateStatusLabel(yPos);
             yPos += spacing; // Add spacing after fullscreen button
 
             // Back Button - positioned on right side for balanced layout
@@ -168,31 +189,26 @@ namespace CleanSnakeGame.UI
 
         private void UpdateStatusLabels()
         {
-            // Remove existing status labels
-            var labelsToRemove = new System.Collections.Generic.List<Control>();
-            foreach (Control control in Controls)
-            {
-                if (control is Label lbl && (lbl.Text.StartsWith("Current:") || lbl.Text.StartsWith("Status:")))
-                {
-                    labelsToRemove.Add(control);
-                }
-            }
-            foreach (var label in labelsToRemove)
-            {
-                Controls.Remove(label);
-                label.Dispose();
-            }
+            SetStatus(difficultyLabel, SettingsManager.Settings.Difficulty, true);
+            diffDescLabel.Text = GetDifficultyDescription();
+            SetStatus(colorLabel, GetColorName(snakeColors[SettingsManager.Settings.SnakeColorIndex]), true);
+            SetStatus(nameLabel, $"Player Name: {SettingsManager.Settings.PlayerName}", true);
+            SetStatus(powerUpsLabel, SettingsManager.Settings.PowerupsEnabled ? "ON" : "OFF", SettingsManager.Settings.PowerupsEnabled);
+            SetStatus(obstaclesLabel, SettingsManager.Settings.ObstaclesEnabled ? "ON" : "OFF", SettingsManager.Settings.ObstaclesEnabled);
+            SetStatus(soundLabel, SettingsManager.Settings.SoundEnabled ? "ON" : "OFF", SettingsManager.Settings.SoundEnabled);
+            SetStatus(gridLabel, SettingsManager.Settings.ShowGrid ? "ON" : "OFF", SettingsManager.Settings.ShowGrid);
+            SetStatus(boundaryLabel, SettingsManager.Settings.boundaryWalls ? "ON" : "OFF", SettingsManager.Settings.boundaryWalls);
+            SetStatus(fullscreenLabel, SettingsManager.Settings.Fullscreen ? "ON" : "OFF", SettingsManager.Settings.Fullscreen);
 
-            // Create new status labels using SettingsManager
-            CreateStatusLabel($"Current: {SettingsManager.Settings.Difficulty}", GetDifficultyDescription(), 150);
-            CreateStatusLabel($"Current: {GetColorName(snakeColors[SettingsManager.Settings.SnakeColorIndex])}", "", 215);
-            CreateStatusLabel($"Enter name: {SettingsManager.Settings.PlayerName}", "", 280);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.PowerupsEnabled ? "ON" : "OFF")}", "", 345);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.ObstaclesEnabled ? "ON" : "OFF")}", "", 410);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.SoundEnabled ? "ON" : "OFF")}", "", 475);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.ShowGrid ? "ON" : "OFF")}", "", 540);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.boundaryWalls ? "ON" : "OFF")}", "", 605);
-            CreateStatusLabel($"Status: {(SettingsManager.Settings.Fullscreen ? "ON" : "OFF")}", "", 670);
+            pnlSnakeColorPreview?.Invalidate();
+        }
+
+        private void SetStatus(Label lbl, string text, bool isPositive)
+        {
+            lbl.Text = text;
+            lbl.ForeColor = isPositive
+                ? Color.FromArgb(76, 175, 80)
+                : Color.FromArgb(244, 67, 54);
         }
 
         private string GetDifficultyDescription()
@@ -206,32 +222,33 @@ namespace CleanSnakeGame.UI
             };
         }
 
-        private void CreateStatusLabel(string mainText, string subText, int yPos)
+        private Label CreateStatusLabel(int yPos)
         {
-            var lblMain = new Label
+            var label = new Label
             {
-                Text = mainText,
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                ForeColor = mainText.Contains("OFF") ? Color.FromArgb(244, 67, 54) : Color.FromArgb(76, 175, 80),
+                Font = new Font("Arial", 12, FontStyle.Regular),
                 BackColor = Color.Transparent,
                 AutoSize = true,
                 Location = new Point(280, yPos + 10)
             };
-            Controls.Add(lblMain);
 
-            if (!string.IsNullOrEmpty(subText))
+            Controls.Add(label);
+            return label;
+        }
+
+        private Label CreateSubtextLabel(int yPos)
+        {
+            var label = new Label
             {
-                var lblSub = new Label
-                {
-                    Text = subText,
-                    Font = new Font("Arial", 10, FontStyle.Regular),
-                    ForeColor = Color.Gray,
-                    BackColor = Color.Transparent,
-                    AutoSize = true,
-                    Location = new Point(280, yPos + 30)
-                };
-                Controls.Add(lblSub);
-            }
+                Font = new Font("Arial", 10, FontStyle.Bold),
+                ForeColor = Color.Gray,
+                BackColor = Color.Transparent,
+                AutoSize = true,
+                Location = new Point(280, yPos + 10)
+            };
+
+            Controls.Add(label);
+            return label;
         }
 
         private string GetColorName(Color color)
@@ -248,7 +265,7 @@ namespace CleanSnakeGame.UI
         private void PnlSnakeColorPreview_Paint(object sender, PaintEventArgs e)
         {
             int segmentWidth = pnlSnakeColorPreview.Width / 3;
-            
+
             for (int i = 0; i < 3; i++)
             {
                 Rectangle rect = new Rectangle(i * segmentWidth, 0, segmentWidth - 1, pnlSnakeColorPreview.Height - 1);
@@ -287,7 +304,7 @@ namespace CleanSnakeGame.UI
         private void BtnPlayerName_Click(object sender, EventArgs e)
         {
             string newName = ShowInputDialog("Enter your player name:", "Player Name", SettingsManager.Settings.PlayerName);
-            
+
             if (!string.IsNullOrWhiteSpace(newName) && newName != SettingsManager.Settings.PlayerName)
             {
                 SettingsManager.Settings.PlayerName = newName;
@@ -364,7 +381,7 @@ namespace CleanSnakeGame.UI
             SettingsManager.Settings.Fullscreen = !SettingsManager.Settings.Fullscreen;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
-            
+
             // Apply fullscreen to this form immediately
             ApplyFullscreenToCurrentForm();
         }
@@ -373,21 +390,19 @@ namespace CleanSnakeGame.UI
         {
             if (SettingsManager.Settings.Fullscreen)
             {
-                // Go fullscreen
                 FormBorderStyle = FormBorderStyle.None;
                 WindowState = FormWindowState.Maximized;
                 TopMost = true;
             }
             else
             {
-                // Exit fullscreen
                 TopMost = false;
-                FormBorderStyle = FormBorderStyle.FixedSingle;
                 WindowState = FormWindowState.Normal;
-                Size = new Size(1024, 800); // Updated to match new form height
+                FormBorderStyle = FormBorderStyle.FixedSingle;
+                Size = new Size(1024, 800);
                 CenterToScreen();
             }
-            
+
             Refresh();
         }
 
