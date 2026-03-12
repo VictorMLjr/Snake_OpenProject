@@ -113,6 +113,15 @@ namespace CleanSnakeGame.UI
                 BorderStyle = BorderStyle.FixedSingle
             };
 
+            typeof(Panel).InvokeMember(
+                "DoubleBuffered",
+                System.Reflection.BindingFlags.SetProperty |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic,
+                null,
+                gamePanel,
+                new object[] { true });
+
             gamePanel.Paint += GamePanel_Paint;
 
             Controls.Add(gamePanel);
@@ -177,12 +186,22 @@ namespace CleanSnakeGame.UI
         private void InitializeComponent()
         {
             SuspendLayout();
-            AutoScaleDimensions = new SizeF(8F, 16F);
+            // 
+            // GameForm
+            // 
+            AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1024, 768);
+            ClientSize = new Size(1280, 1200);
+            Margin = new Padding(4, 5, 4, 5);
             Name = "GameForm";
             Text = "Ultimate Snake Game - Playing";
+            Load += GameForm_Load;
             ResumeLayout(false);
+        }
+
+        private void GameForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
     public enum Direction { Up, Down, Left, Right }

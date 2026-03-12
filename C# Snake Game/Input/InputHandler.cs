@@ -11,6 +11,7 @@ namespace CleanSnakeGame.Input
         private readonly GameState state;
         private readonly GameManager manager;
         private readonly WindowService windowService;
+        private readonly GameDialogs gameDialogs;
 
         private const int MAX_BUFFER = 3;
 
@@ -61,7 +62,7 @@ namespace CleanSnakeGame.Input
                     break;
 
                 case Keys.Escape:
-                    manager.TogglePause();
+                    gameDialogs.ShowPauseMenu();
                     break;
             }
         }
