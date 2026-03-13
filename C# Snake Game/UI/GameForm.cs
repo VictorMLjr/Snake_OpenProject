@@ -84,7 +84,8 @@ namespace CleanSnakeGame.UI
                 gamePanel,
                 UpdateUI,
                 () => gameDialogs.ShowGameOverDialog(),
-                () => gameDialogs.ShowPauseMenu()
+                () => gameDialogs.ShowPauseMenu(),
+                () => gameDialogs.HidePauseMenu()
             );
 
             gameDialogs = new GameDialogs(this, gameState, gameManager);
