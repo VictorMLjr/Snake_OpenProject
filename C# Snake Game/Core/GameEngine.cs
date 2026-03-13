@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
+using System.Media;
 using CleanSnakeGame.Data;
 using CleanSnakeGame.Services;
 using CleanSnakeGame.UI;
@@ -14,6 +15,9 @@ namespace CleanSnakeGame.Core
 
         private const int GridWidth = 40;
         private const int GridHeight = 30;
+
+        SoundPlayer nom = new SoundPlayer(Properties.Resources.munch);
+        SoundPlayer ouch = new SoundPlayer(Properties.Resources.ouch);
 
         public GameEngine(GameState gameState)
         {
@@ -47,6 +51,8 @@ namespace CleanSnakeGame.Core
 
             if (CheckSelfCollision())
             {
+                if (SettingsManager.Settings.SoundEnabled) ouch.Play();
+
                 state.GameOver = true;
                 return;
             }
@@ -62,6 +68,8 @@ namespace CleanSnakeGame.Core
                 if (newHead.X < 0 || newHead.X >= GridWidth ||
                     newHead.Y < 0 || newHead.Y >= GridHeight)
                 {
+                    if (SettingsManager.Settings.SoundEnabled) ouch.Play();
+
                     state.GameOver = true;
                 }
             }
@@ -78,6 +86,8 @@ namespace CleanSnakeGame.Core
         {
             if (newHead.Equals(state.Food))
             {
+                if (SettingsManager.Settings.SoundEnabled) nom.Play();
+
                 state.Score += 10;
                 GenerateFood();
 
@@ -89,12 +99,16 @@ namespace CleanSnakeGame.Core
             }
             else if (SettingsManager.Settings.PowerupsEnabled && state.Powerups.Contains(newHead))
             {
+                if (SettingsManager.Settings.SoundEnabled) nom.Play();
+
                 state.Powerups.Remove(newHead);
                 state.PowerupTimers.Remove(newHead);
                 state.Score += 25;
             }
             else if (SettingsManager.Settings.ObstaclesEnabled && state.Obstacles.Contains(newHead))
             {
+                if (SettingsManager.Settings.SoundEnabled) ouch.Play();
+
                 state.GameOver = true;
             }
             else
