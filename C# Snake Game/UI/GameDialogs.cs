@@ -108,7 +108,8 @@ namespace CleanSnakeGame.Services
             };
 
             var yes = CreateButton("YES", 220, Color.FromArgb(50, 200, 50));
-            yes.Location = new Point(80, 220);
+            yes.Size = new Size(120, 40);
+            yes.Location = new Point(60, 220);
             yes.Click += (s, e) =>
             {
                 form.Controls.Remove(panel);
@@ -116,13 +117,14 @@ namespace CleanSnakeGame.Services
             };
 
             var no = CreateButton("NO", 220, Color.FromArgb(200, 50, 50));
-            no.Location = new Point(220, 220);
+            no.Size = new Size(120, 40);
+            no.Location = new Point(190, 220);
             no.Click += (s, e) =>
             {
                 form.Controls.Remove(panel);
                 ReturnToMainMenu();
             };
-
+            
             panel.Controls.Add(title);
             panel.Controls.Add(score);
             panel.Controls.Add(yes);
