@@ -1,12 +1,16 @@
+using CleanSnakeGame.Services;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Media;
 using System.Windows.Forms;
 
 namespace CleanSnakeGame.UI
 {
     public partial class MainMenuForm : Form
     {
+        SoundPlayer click = new SoundPlayer(Properties.Resources.click);
+
         private Panel centerPanel;
         private Label lblTitle;
         private Label lblSubtitle;
@@ -243,12 +247,16 @@ namespace CleanSnakeGame.UI
 
         private void BtnHighScores_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             using var scoresForm = new HighScoresForm();
             scoresForm.ShowDialog(this);
         }
 
         private void BtnStartGame_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             var gameForm = new GameForm();
             gameForm.FormClosed += (s, args) => Show();
             Hide();
@@ -257,6 +265,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnSettings_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             var settingsForm = new SettingsForm();
             settingsForm.FormClosed += (s, args) => Show();
             Hide();
