@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Text;
+using System.Media;
 using System.Windows.Forms;
 using CleanSnakeGame.Services;
 
@@ -8,6 +9,8 @@ namespace CleanSnakeGame.UI
 {
     public partial class SettingsForm : Form
     {
+        SoundPlayer click = new SoundPlayer(Properties.Resources.click);
+
         private Label lblTitle;
         private Button btnDifficulty;
         private Button btnSnakeColor;
@@ -282,6 +285,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnDifficulty_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.Difficulty = SettingsManager.Settings.Difficulty switch
             {
                 "Easy" => "Medium",
@@ -295,6 +300,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnSnakeColor_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.SnakeColorIndex = (SettingsManager.Settings.SnakeColorIndex + 1) % snakeColors.Length;
             SettingsManager.SaveSettings();
             pnlSnakeColorPreview.Invalidate();
@@ -303,6 +310,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnPlayerName_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             string newName = ShowInputDialog("Enter your player name:", "Player Name", SettingsManager.Settings.PlayerName);
 
             if (!string.IsNullOrWhiteSpace(newName) && newName != SettingsManager.Settings.PlayerName)
@@ -344,6 +353,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnPowerups_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.PowerupsEnabled = !SettingsManager.Settings.PowerupsEnabled;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
@@ -351,6 +362,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnObstacles_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.ObstaclesEnabled = !SettingsManager.Settings.ObstaclesEnabled;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
@@ -358,6 +371,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnSound_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.SoundEnabled = !SettingsManager.Settings.SoundEnabled;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
@@ -365,6 +380,8 @@ namespace CleanSnakeGame.UI
 
         private void BtnShowGrid_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.ShowGrid = !SettingsManager.Settings.ShowGrid;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
@@ -372,12 +389,16 @@ namespace CleanSnakeGame.UI
 
         private void BtnEnableCollision_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.boundaryWalls = !SettingsManager.Settings.boundaryWalls;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
         }
         private void BtnFullscreen_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
+
             SettingsManager.Settings.Fullscreen = !SettingsManager.Settings.Fullscreen;
             SettingsManager.SaveSettings();
             UpdateStatusLabels();
@@ -408,6 +429,7 @@ namespace CleanSnakeGame.UI
 
         private void BtnBack_Click(object sender, EventArgs e)
         {
+            if (SettingsManager.Settings.SoundEnabled) click.Play();
             Close();
         }
 
