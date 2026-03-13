@@ -11,31 +11,33 @@ namespace CleanSnakeGame.Services
     {
         private readonly GameState state;
         private readonly GameEngine engine;
-        //private readonly GameDialogs dialogs;
         private readonly Action showPauseMenu;
 
         private readonly Timer gameTimer;
 
         private readonly Action updateUI;
         private readonly Action showGameOverDialog;
-        private readonly Panel pausePanel;
+        private readonly Panel gamePanel;
+        private readonly Action hidePauseMenu;
 
         public GameManager(
             GameState state,
             GameEngine engine,
             Timer timer,
-            Panel pausePanel,
+            Panel gamePanel,
             Action updateUI,
             Action showGameOverDialog,
-            Action showPauseMenu)
+            Action showPauseMenu,
+            Action hidePauseMenu)
         {
             this.state = state;
             this.engine = engine;
             this.gameTimer = timer;
-            this.pausePanel = pausePanel;
+            this.gamePanel = gamePanel;
             this.updateUI = updateUI;
             this.showGameOverDialog = showGameOverDialog;
             this.showPauseMenu = showPauseMenu;
+            this.hidePauseMenu = hidePauseMenu;
         }
 
         public void InitializeGame()
@@ -60,9 +62,12 @@ namespace CleanSnakeGame.Services
             gameTimer.Stop();
 
             InitializeGame();
-
-            pausePanel.Visible = false;
+            
             state.GamePaused = false;
+
+            gamePanel.Invalidate();
+            gamePanel.Focus();
+
         }
 
         public void GameOver()
@@ -107,6 +112,8 @@ namespace CleanSnakeGame.Services
             {
                 state.GamePaused = false;
                 gameTimer.Start();
+
+                hidePauseMenu?.Invoke();
             }
             else
             {

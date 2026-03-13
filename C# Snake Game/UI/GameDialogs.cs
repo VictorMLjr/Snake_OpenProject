@@ -12,6 +12,7 @@ namespace CleanSnakeGame.Services
         private readonly Form form;
         private readonly GameState state;
         private readonly GameManager manager;
+        private Panel pausePanel;
 
         public GameDialogs(Form form, GameState state, GameManager manager)
         {
@@ -24,7 +25,7 @@ namespace CleanSnakeGame.Services
         {
             if (!state.GameRunning) return;
 
-            var panel = new Panel
+            pausePanel = new Panel
             {
                 Size = new Size(350, 300),
                 BackColor = Color.FromArgb(40, 45, 55),
@@ -44,7 +45,7 @@ namespace CleanSnakeGame.Services
             var resume = CreateButton("RESUME", 80, Color.FromArgb(50, 200, 50));
             resume.Click += (s, e) =>
             {
-                form.Controls.Remove(panel);
+                form.Controls.Remove(pausePanel);
                 manager.TogglePause();
                 form.Focus();
             };
@@ -52,20 +53,29 @@ namespace CleanSnakeGame.Services
             var menu = CreateButton("MAIN MENU", 150, Color.FromArgb(255, 165, 0));
             menu.Click += (s, e) =>
             {
-                form.Controls.Remove(panel);
+                form.Controls.Remove(pausePanel);
                 ReturnToMainMenu();
             };
 
             var quit = CreateButton("QUIT GAME", 220, Color.FromArgb(200, 50, 50));
             quit.Click += (s, e) => Application.Exit();
 
-            panel.Controls.Add(title);
-            panel.Controls.Add(resume);
-            panel.Controls.Add(menu);
-            panel.Controls.Add(quit);
+            pausePanel.Controls.Add(title);
+            pausePanel.Controls.Add(resume);
+            pausePanel.Controls.Add(menu);
+            pausePanel.Controls.Add(quit);
 
-            form.Controls.Add(panel);
-            panel.BringToFront();
+            form.Controls.Add(pausePanel);
+            pausePanel.BringToFront();
+        }
+        public void HidePauseMenu()
+        {
+            if (pausePanel != null)
+            {
+                form.Controls.Remove(pausePanel);
+                pausePanel.Dispose();
+                pausePanel = null;
+            }
         }
 
         public void ShowGameOverDialog()
